@@ -1,0 +1,70 @@
+# Run SSH in Windows Shell
+ssh -i "D:/~/ssh-key-2026-04-15.key" ubuntu@12.123.12.12
+
+
+------------------------------------------------------------------------
+
+# Install mosquitto
+sudo apt update && sudo apt upgrade -y
+sudo apt install mosquitto mosquitto-clients -y
+
+# Config mosquitto
+sudo nano /etc/mosquitto/conf.d/external.conf
+listener 1883 0.0.0.0
+allow_anonymous true
+
+# Enable and start the service
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto
+
+# Check net status
+netstat -tulpn | grep 1883
+
+# Insert the allow rules at the very top
+sudo iptables -I INPUT 1 -p tcp --dport 1883 -j ACCEPT
+sudo iptables -I INPUT 1 -p tcp --dport 3000 -j ACCEPT
+
+# Save them so they survive a reboot
+sudo netfilter-persistent save
+
+
+# Stop mosquito
+sudo systemctl stop mosquito
+
+----------------
+
+# Run mosquitto in verbose mode
+udo mosquitto -v -c /etc/mosquitto/conf.d/external.conf
+
+
+---------------
+
+# Set mosquito passwords
+sudo mosquitto_passwd -c /etc/mosquitto/passwd central-link
+sudo nano /etc/mosquitto/conf.d/external.conf
+password_file /etc/mosquitto/passwd
+
+# Give ownership to mosquitto
+sudo chown mosquitto:mosquitto /etc/mosquitto/passwd
+sudo chmod 600 /etc/mosquitto/passwd
+
+-------------
+
+# Install nodejs
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Clone backend
+cd /opt
+sudo git clone https://github.com/ahmedhossamfarag/clinic-iot-backend.git
+cd clinic-iot-backend
+sudo npm i --production
+sudo nano .env
+node server.js
+
+-------------------------------------------------------------
+
+
+# Check connection in Windows Shell
+Test-NetConnection -ComputerName 89.168.76.70 -Port 1883
+

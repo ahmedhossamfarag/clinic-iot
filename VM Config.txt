@@ -34,7 +34,7 @@ sudo systemctl stop mosquito
 ----------------
 
 # Run mosquitto in verbose mode
-udo mosquitto -v -c /etc/mosquitto/conf.d/external.conf
+sudo mosquitto -v -c /etc/mosquitto/conf.d/external.conf
 
 
 ---------------
@@ -61,6 +61,23 @@ cd clinic-iot-backend
 sudo npm i --production
 sudo nano .env
 node server.js
+
+# Update backend
+sudo git fetch
+sudo git pull
+
+# Run backend as BG service
+sudo npm install -g pm2
+pm2 start server.js --name "clinic-iot-backend
+pm2 startup systemd
+pm2 save
+
+# Show backend logs
+pm2 logs clinic-iot-backend
+
+# Stop backend
+pm2 stop clinic-iot-backend
+
 
 -------------------------------------------------------------
 

@@ -85,7 +85,10 @@
                     {
                         "id": "UUID",
                         "name": "VarChar(255)",
-                        "holder_name": "VarChar(255)"
+                        "holder_name": "VarChar(255)",
+                        "last_record_timestamp": "Timestamp",
+                        "router_id": "UUID",
+                        "router_name": "VarChar(255)"
                     }
                 ]
             }

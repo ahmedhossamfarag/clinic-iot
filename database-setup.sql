@@ -1,41 +1,85 @@
--- Create Table routers
+-- OracleDB SQL script to set up the database schema for routers, devices, and their connection records
+-- Create Table hospitals
+CREATE TABLE hospitals (
+    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    hospital_id VARCHAR2 (255) UNIQUE NOT NULL,
+    name VARCHAR2 (255) NOT NULL,
+    address VARCHAR2 (255),
+    admin_name VARCHAR2 (255),
+    admin_email VARCHAR2 (255),
+    password VARCHAR2 (255) NOT NULL,
+    blueprint VARCHAR2 (255)
+);
+
+CREATE TABLE patients (
+    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    hospital_id RAW (16),
+    name VARCHAR2 (255) NOT NULL,
+    CONSTRAINT fk_pat_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals (id)
+);
+
 CREATE TABLE routers (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    location_x FLOAT DEFAULT 0.0,
-    location_y FLOAT DEFAULT 0.0
+    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    hospital_id RAW (16),
+    name VARCHAR2 (255) NOT NULL,
+    location_x NUMBER DEFAULT 0,
+    location_y NUMBER DEFAULT 0,
+    CONSTRAINT fk_router_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals (id),
+    CONSTRAINT uq_router UNIQUE (hospital_id, name)
 );
 
--- Create Table devices
 CREATE TABLE devices (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    holder_name VARCHAR(255)
+    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    hospital_id RAW (16),
+    patient_id RAW (16),
+    name VARCHAR2 (255) NOT NULL,
+    CONSTRAINT fk_dev_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals (id),
+    CONSTRAINT fk_dev_patient FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE SET NULL,
+    CONSTRAINT uq_device UNIQUE (hospital_id, name)
 );
 
--- Create Table records
-create table records (
-    router_id UUID REFERENCES routers (id),
-    device_id UUID REFERENCES devices (id),
-    timestamp timestamp DEFAULT NOW()
+CREATE TABLE records (
+    id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    router_id RAW (16),
+    patient_id RAW (16),
+    timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+    rssi NUMBER NOT NULL,
+    CONSTRAINT fk_rec_router FOREIGN KEY (router_id) REFERENCES routers (id) ON DELETE CASCADE,
+    CONSTRAINT fk_rec_patient FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
 );
 
--- Create view latest_records that retreives the latest record for each device
-CREATE OR REPLACE VIEW latest_records AS
-SELECT DISTINCT ON (device_id) 
+-- Create latest_records that returns the latest record for each device
+CREATE
+OR REPLACE VIEW latest_records AS
+SELECT
     device_id,
     router_id,
     timestamp
 FROM
-    records
-ORDER BY
-    device_id,
-    timestamp DESC;
+    (
+        SELECT
+            devices.id AS device_id,
+            records.router_id,
+            records.timestamp,
+            ROW_NUMBER() OVER (
+                PARTITION BY
+                    devices.id
+                ORDER BY
+                    records.timestamp DESC
+            ) AS rn
+        FROM
+            records
+            JOIN devices ON records.patient_id = devices.patient_id
+    )
+WHERE
+    rn = 1;
 
--- Create view routers_map that retreives the location and the number of devices connected to each router
-CREATE OR REPLACE VIEW routers_map AS
+-- Create routers_map that returns a map of all routers with their locations and the count of connected devices
+CREATE
+OR REPLACE VIEW routers_map AS
 SELECT
     routers.id,
+    routers.hospital_id,
     routers.location_x,
     routers.location_y,
     COUNT(latest_records.device_id) AS connected_devices_count
@@ -43,122 +87,214 @@ FROM
     routers
     LEFT JOIN latest_records ON routers.id = latest_records.router_id
 GROUP BY
-    routers.id;
+    routers.id,
+    routers.hospital_id,
+    routers.location_x,
+    routers.location_y;
 
--- Create view routers_devices that retreives the devices connected to each router
--- CREATE OR REPLACE VIEW routers_devices AS
--- SELECT
---     routers.id,
---     routers.name,
---     routers.location_x,
---     routers.location_y,
---     json_agg(row_to_json(devices)) AS connected_devices
--- FROM
---     routers
---     JOIN latest_records ON routers.id = latest_records.router_id
---     JOIN devices ON devices.id = latest_records.device_id
--- GROUP BY
---     routers.id;
-
--- Create view devices_routers that retreives the router connected to each device
--- CREATE OR REPLACE VIEW devices_routers AS
--- SELECT
---     devices.id,
---     devices.name,
---     devices.holder_name,
---     latest_records.timestamp,
---     json_build_object('id', routers.id, 'name', routers.name) AS connected_router
--- FROM
---     devices
---     JOIN latest_records ON devices.id = latest_records.device_id
---     JOIN routers ON routers.id = latest_records.router_id;
-CREATE OR REPLACE VIEW devices_routers AS
+-- Create devices_routers that returns a map of all devices with their connections
+CREATE
+OR REPLACE VIEW devices_routers AS
 SELECT
     devices.id,
+    devices.hospital_id,
     devices.name,
-    devices.holder_name,
-    latest_records.timestamp as last_record_timestamp,
+    patients.name AS holder_name,
+    latest_records.timestamp AS last_record_timestamp,
     routers.id AS router_id,
     routers.name AS router_name
 FROM
     devices
+    JOIN patients ON devices.patient_id = patients.id
     JOIN latest_records ON devices.id = latest_records.device_id
     JOIN routers ON routers.id = latest_records.router_id;
 
--- Create view hourly_records that retreives the number of records for each hour
-CREATE OR REPLACE VIEW hourly_records AS
+-- Create hourly_records that returns the number of records created each hour
+CREATE
+OR REPLACE VIEW hourly_records AS
 SELECT
-    date_trunc('hour', timestamp) AS hour,
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH') AS hour,
     COUNT(*) AS records_count
 FROM
     records
+    JOIN routers ON records.router_id = routers.id
 GROUP BY
-    hour
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH')
 ORDER BY
-    hour;
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH');
 
--- Create view hourly_devices that retreives the number of devices for each hour
-CREATE OR REPLACE VIEW hourly_devices AS
+-- Create hourly_patients that returns the number of patients seen each hour
+CREATE
+OR REPLACE VIEW hourly_patients AS
 SELECT
-    date_trunc('hour', timestamp) AS hour,
-    COUNT(DISTINCT device_id) AS devices_count
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH') AS hour,
+    COUNT(DISTINCT records.patient_id) AS patients_count
 FROM
     records
+    JOIN routers ON records.router_id = routers.id
 GROUP BY
-    hour
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH')
 ORDER BY
-    hour;
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH');
 
--- Create view devices_routers_sessions that retreives the session duration for each device at each router
-CREATE OR REPLACE VIEW devices_routers_sessions AS
+-- Create patients_routers_sessions that returns the total session duration for each patient
+CREATE
+OR REPLACE VIEW patients_routers_sessions AS
 SELECT
-    device_id,
+    patient_id,
     router_id,
     MIN(timestamp) AS start_time,
-    MAX(timestamp) - MIN(timestamp) AS duration
+    (
+        CAST(MAX(timestamp) AS DATE) - CAST(MIN(timestamp) AS DATE)
+    ) * 86400 AS duration_seconds
 FROM
     records
 GROUP BY
-    device_id, router_id
-ORDER BY
-    start_time;
+    patient_id,
+    router_id;
 
--- Create view routers_hourly_sessions that retreives the average session duration for each router at different hours
-CREATE OR REPLACE VIEW routers_hourly_sessions AS
+-- Create routers_hourly_sessions that returns the number of connected devices and the average session duration
+CREATE
+OR REPLACE VIEW routers_hourly_sessions AS
 SELECT
     router_id,
-    date_trunc('hour', start_time) AS hour,
+    TRUNC (start_time, 'HH') AS hour,
     COUNT(*) AS sessions_count,
-    AVG(duration) AS average_session_duration
+    AVG(duration_seconds) AS average_session_duration
 FROM
-    devices_routers_sessions
+    patients_routers_sessions
 GROUP BY
-    router_id, hour
-ORDER BY
-    hour;
+    router_id,
+    TRUNC (start_time, 'HH');
 
--- Create view devices_sessions that retrieves the total session duration for each device
-CREATE OR REPLACE VIEW devices_sessions AS
+-- Create patients_sessions that returns the earliest start time and total session duration for each patient
+CREATE
+OR REPLACE VIEW patients_sessions AS
 SELECT
-    device_id,
+    patient_id,
     MIN(start_time) AS earliest_start_time,
-    SUM(duration) AS total_duration
+    SUM(duration_seconds) AS total_duration
 FROM
-    devices_routers_sessions
+    patients_routers_sessions
 GROUP BY
-    device_id
-ORDER BY
-    earliest_start_time;
+    patient_id;
 
--- Create view devices_hourly_sessions that retreives the average total session duration for devices at different hours
-CREATE OR REPLACE VIEW devices_hourly_sessions AS
+-- Create patients_hourly_sessions that returns the average session duration for each patient
+CREATE
+OR REPLACE VIEW patients_hourly_sessions AS
 SELECT
-    date_trunc('hour', earliest_start_time) AS hour,
+    TRUNC (earliest_start_time, 'HH') AS hour,
     AVG(total_duration) AS average_total_session_duration
 FROM
-    devices_sessions
+    patients_sessions
 GROUP BY
-    hour
-ORDER BY
-    hour;
+    TRUNC (patients_sessions.earliest_start_time, 'HH');
 
+--
+--
+--
+--
+-- Using Materealized Views
+CREATE TABLE records (
+    id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    router_id RAW (16),
+    patient_id RAW (16),
+    device_id RAW (16),
+    timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+    rssi NUMBER NOT NULL
+)
+PARTITION BY
+    RANGE (timestamp) INTERVAL(NUMTODSINTERVAL (1, 'DAY')) (
+        PARTITION p0
+        VALUES
+            LESS THAN (TIMESTAMP '2026-01-01 00:00:00')
+    );
+
+CREATE INDEX idx_records_router_time ON records (router_id, timestamp);
+
+CREATE INDEX idx_records_patient_time ON records (patient_id, timestamp);
+
+CREATE INDEX idx_records_device_time ON records (device_id, timestamp);
+
+CREATE MATERIALIZED VIEW latest_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+SELECT
+    device_id,
+    router_id,
+    timestamp
+FROM
+    (
+        SELECT
+            device_id,
+            router_id,
+            timestamp,
+            ROW_NUMBER() OVER (
+                PARTITION BY
+                    device_id
+                ORDER BY
+                    timestamp DESC
+            ) rn
+        FROM
+            records
+    )
+WHERE
+    rn = 1;
+
+CREATE MATERIALIZED VIEW routers_map_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+SELECT
+    r.id,
+    r.hospital_id,
+    r.location_x,
+    r.location_y,
+    COUNT(l.device_id) AS connected_devices_count
+FROM
+    routers r
+    LEFT JOIN latest_records_mv l ON r.id = l.router_id
+GROUP BY
+    r.id,
+    r.hospital_id,
+    r.location_x,
+    r.location_y;
+
+CREATE MATERIALIZED VIEW hourly_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+SELECT
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH') AS hour,
+    COUNT(*) AS records_count
+FROM
+    records
+    JOIN routers ON records.router_id = routers.id
+GROUP BY
+    routers.hospital_id,
+    TRUNC (records.timestamp, 'HH');
+
+CREATE MATERIALIZED VIEW patient_router_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+SELECT
+    patient_id,
+    router_id,
+    MIN(timestamp) AS start_time,
+    (
+        CAST(MAX(timestamp) AS DATE) - CAST(MIN(timestamp) AS DATE)
+    ) * 86400 AS duration_seconds
+FROM
+    records
+GROUP BY
+    patient_id,
+    router_id;
+
+CREATE MATERIALIZED VIEW router_hourly_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+SELECT
+    router_id,
+    TRUNC (start_time, 'HH') AS hour,
+    COUNT(*) AS sessions_count,
+    AVG(duration_seconds) AS avg_session_duration
+FROM
+    patient_router_sessions_mv
+GROUP BY
+    router_id,
+    TRUNC (start_time, 'HH');

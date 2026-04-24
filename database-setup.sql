@@ -42,7 +42,7 @@ CREATE TABLE records (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     router_id RAW (16),
     patient_id RAW (16),
-    timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     rssi NUMBER NOT NULL,
     CONSTRAINT fk_rec_router FOREIGN KEY (router_id) REFERENCES routers (id) ON DELETE CASCADE,
     CONSTRAINT fk_rec_patient FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE

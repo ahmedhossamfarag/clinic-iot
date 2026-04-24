@@ -196,6 +196,26 @@ FROM
 GROUP BY
     TRUNC (patients_sessions.earliest_start_time, 'HH');
 
+
+CREATE OR REPLACE FUNCTION raw_to_uuid(p_raw IN RAW)
+RETURN VARCHAR2
+DETERMINISTIC
+IS
+    h VARCHAR2(32);
+BEGIN
+    IF p_raw IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    h := LOWER(RAWTOHEX(p_raw));
+
+    RETURN SUBSTR(h, 1, 8)  || '-' ||
+           SUBSTR(h, 9, 4)  || '-' ||
+           SUBSTR(h, 13, 4) || '-' ||
+           SUBSTR(h, 17, 4) || '-' ||
+           SUBSTR(h, 21, 12);
+END;
+
 --
 --
 --

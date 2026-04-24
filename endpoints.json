@@ -1,6 +1,7 @@
 {
     "version": "1.0",
     "description": "API endpoints for managing and retrieving information about routers, devices, and records.",
+    "note": "All durations are in seconds.",
     "keys description": {
         "path": "The URL path for the API endpoint.",
         "description": "A brief description of what the endpoint does.",
@@ -72,7 +73,7 @@
                         "router_id": "UUID",
                         "hour": "Timestamp",
                         "sessions_count": "Int",
-                        "average_session_duration": "Timestamp"
+                        "average_session_duration": "Int"
                     }
                 ]
             }
@@ -80,6 +81,19 @@
         {
             "path": "/devices",
             "description": "Get a list of all devices.",
+            "response": {
+                "devices": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "patient_id": "UUID|Null"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/devices/with-routers-info",
+            "description": "Get a list of all devices with their router information.",
             "response": {
                 "devices": [
                     {
@@ -106,13 +120,13 @@
             }
         },
         {
-            "path": "/records/hourly-devices",
-            "description": "Get the number of unique devices that created records each hour.",
+            "path": "/records/hourly-patients",
+            "description": "Get the number of unique patients that created records each hour.",
             "response": {
                 "records_hourly": [
                     {
                         "hour": "Timestamp",
-                        "devices_count": "Int"
+                        "patients_count": "Int"
                     }
                 ]
             }
@@ -124,7 +138,7 @@
                 "hourly_sessions": [
                     {
                         "hour": "Timestamp",
-                        "average_total_session_duration": "Timestamp"
+                        "average_total_session_duration": "Int"
                     }
                 ]
             }

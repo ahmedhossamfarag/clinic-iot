@@ -58,7 +58,7 @@ sudo apt install -y nodejs
 cd /opt
 sudo git clone https://github.com/ahmedhossamfarag/clinic-iot-backend.git
 cd clinic-iot-backend
-sudo npm i --production
+sudo npm i --omit=dev
 sudo nano .env
 node server.js
 
@@ -78,6 +78,22 @@ pm2 logs clinic-iot-backend
 # Stop backend
 pm2 stop clinic-iot-backend
 
+----------------
+# Upload Oracle files to VM
+scp -i "D:\~\ssh-key-2026-04-15.key" "D:\~\ahmd-xxxx-560Z.pem" ubuntu@89.168.76.70:~/
+scp -i "D:\~\ssh-key-2026-04-15.key" "D:\~\Wallet_ClinicIoT" ubuntu@89.168.76.70:~/
+
+# Install unzip
+sudo apt install unzip
+
+# Move/Unzipt files
+cd ~
+sudo unzip Wallet_ClinicIoT.zip -d /opt/clinic-iot-backend/services/wallet
+sudo mv ahmd-xxxx-560Z.pem /opt/clinic-iot-backend/services/.oci/
+
+# Create OCI config
+cd /opt/clinic-iot-backend/services/.oci/
+sudo nano config
 
 -------------------------------------------------------------
 

@@ -1,0 +1,165 @@
+{
+  "info": {
+    "_postman_id": "145a147b-2791-4c5e-9c6c-13c02dc306f7",
+    "name": "ADollarClassAPI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "40674856"
+  },
+  "item": [
+    {
+      "name": "signup",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user\": {\n        \"nickname\": \"Ahmed Farag\",\n        \"email\": \"ahmd2@gmail.com\",\n        \"password\": \"1234\",\n        \"password_confirmation\": \"1234\",\n        \"experience\": \"experience\",\n        \"specialty\": \"specialty\",\n        \"qualifications\": \"qualifications\",\n        \"portfolio\": \"portfolio\",\n        \"role\": \"educator\"\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/auth/signup",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "auth",
+            "signup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "educators",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/users/educators",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "users",
+            "educators"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "applications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/applications",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "applications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "new application",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"application\": {\n        \"user_id\": 1,\n        \"status\": \"pending\"\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/applications",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "applications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update application",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"application\": {\n        \"user_id\": 2,\n        \"status\": \"accepted\"\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/applications/1",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "applications",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "signin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"ahmd2@gmail.com\",\n    \"password\": \"1234\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/auth/signin",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "auth",
+            "signin"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

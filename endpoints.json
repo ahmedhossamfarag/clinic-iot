@@ -9,7 +9,79 @@
     },
     "endpoints": [
         {
+            "path": "/auth/signup",
+            "method": "POST",
+            "description": "Sign up a new hospital.",
+            "body": {
+                "hospital_id": "VarChar(255)",
+                "name": "VarChar(255)",
+                "address": "VarChar(255)",
+                "admin_name": "VarChar(255)",
+                "admin_email": "VarChar(255)",
+                "password": "VarChar"
+            }
+        },
+        {
+            "path": "/auth/login",
+            "method": "POST",
+            "description": "Log in to an existing hospital.",
+            "body": {
+                "hospital_id": "VarChar(255)",
+                "password": "VarChar"
+            }
+        },
+        {
+            "path": "/settings",
+            "method": "PUT",
+            "description": "Update the hospital settings.",
+            "body": {
+                "name": "VarChar(255)|Undefined",
+                "address": "VarChar(255)|Undefined",
+                "admin_name": "VarChar(255)|Undefined",
+                "admin_email": "VarChar(255)|Undefined",
+                "password": "VarChar|Undefined"
+            }
+        },
+        {
+            "path": "/settings/records",
+            "method": "DELETE",
+            "description": "Delete all patients info along with all records."
+        },
+        {
+            "path": "/settings/account",
+            "method": "DELETE",
+            "description": "Delete the account."
+        },
+        {
+            "path": "/settings/blueprint",
+            "method": "PUT",
+            "description": "Update the blueprint.",
+            "body": {
+                "image": "File"
+            }
+        },
+        {
+            "path": "/settings/blueprint",
+            "method": "GET",
+            "description": "Get the blueprint.",
+            "response": {
+                "url": "URL"
+            }
+        },
+        {
             "path": "/routers",
+            "method": "POST",
+            "description": "Create a new router.",
+            "body": {
+                "router_id": "UUID",
+                "name": "VarChar(255)",
+                "location_x": "Float",
+                "location_y": "Float"
+            }
+        },
+        {
+            "path": "/routers",
+            "method": "GET",
             "description": "Get a list of all routers.",
             "response": {
                 "routers": [
@@ -24,6 +96,7 @@
         },
         {
             "path": "/routers/map",
+            "method": "GET",
             "description": "Get a map of all routers with their locations and the count of connected devices.",
             "response": {
                 "routers_map": [
@@ -38,6 +111,7 @@
         },
         {
             "path": "/routers/{id}",
+            "method": "GET",
             "description": "Get details of a specific router by its ID.",
             "response": {
                 "router": {
@@ -50,6 +124,7 @@
         },
         {
             "path": "/routers/{id}/devices",
+            "method": "GET",
             "description": "Get a list of all devices connected to a specific router by its ID.",
             "response": {
                 "devices": [
@@ -66,6 +141,7 @@
         },
         {
             "path": "/routers/{id}/hourly-sessions-duration",
+            "method": "GET",
             "description": "Get the number of connected devices and the average session duration for a specific router by its ID.",
             "response": {
                 "hourly_sessions": [
@@ -80,6 +156,16 @@
         },
         {
             "path": "/devices",
+            "method": "POST",
+            "description": "Create a new device.",
+            "body": {
+                "device_id": "UUID",
+                "name": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/devices",
+            "method": "GET",
             "description": "Get a list of all devices.",
             "response": {
                 "devices": [
@@ -93,6 +179,7 @@
         },
         {
             "path": "/devices/with-routers-info",
+            "method": "GET",
             "description": "Get a list of all devices with their router information.",
             "response": {
                 "devices": [
@@ -108,7 +195,13 @@
             }
         },
         {
+            "path": "/devices/{id}/release",
+            "method": "PUT",
+            "description": "Release device holder."
+        },
+        {
             "path": "/records/hourly-records",
+            "method": "GET",
             "description": "Get the number of records created each hour.",
             "response": {
                 "records_hourly": [
@@ -120,7 +213,46 @@
             }
         },
         {
+            "path": "/patients",
+            "method": "POST",
+            "description": "Create a new patient.",
+            "body": {
+                "device_id": "UUID",
+                "name": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/patients",
+            "method": "GET",
+            "description": "Get a list of all patients.",
+            "response": {
+                "patients": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/patients/{id}/sessions",
+            "method": "GET",
+            "description": "Get a list of all sessions for a specific patient by its ID.",
+            "response": {
+                "patient_sessions": [
+                    {
+                        "patient_id": "UUID",
+                        "router_id": "UUID",
+                        "router_name": "VarChar(255)",
+                        "start_time": "Timestamp",
+                        "duration": "Int"
+                    }
+                ]
+            }
+        },
+        {
             "path": "/records/hourly-patients",
+            "method": "GET",
             "description": "Get the number of unique patients that created records each hour.",
             "response": {
                 "records_hourly": [
@@ -133,6 +265,7 @@
         },
         {
             "path": "/records/hourly-sessions-duration",
+            "method": "GET",
             "description": "Get the average total session duration for each hour.",
             "response": {
                 "hourly_sessions": [

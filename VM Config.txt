@@ -11,7 +11,7 @@ sudo apt install mosquitto mosquitto-clients -y
 # Config mosquitto
 sudo nano /etc/mosquitto/conf.d/external.conf
 listener 1883 0.0.0.0
-allow_anonymous true
+allow_anonymous false
 
 # Enable and start the service
 sudo systemctl enable mosquitto
@@ -29,7 +29,7 @@ sudo netfilter-persistent save
 
 
 # Stop mosquito
-sudo systemctl stop mosquito
+sudo systemctl stop mosquitto
 
 ----------------
 
@@ -47,6 +47,43 @@ password_file /etc/mosquitto/passwd
 # Give ownership to mosquitto
 sudo chown mosquitto:mosquitto /etc/mosquitto/passwd
 sudo chmod 600 /etc/mosquitto/passwd
+
+----------------
+# Create TLS certificates
+cd /etc/mosquitto/certs
+
+sudo openssl req -new -x509 -days 365 -extensions v3_ca -keyout ca.key -out ca.crt
+sudo openssl genrsa -aes256 -out server.key 2048
+sudo openssl req -out server.csr -key server.key -new
+sudo openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
+sudo openssl genrsa -aes256 -out client.key 2048
+sudo openssl req -out client.csr -key client.key -new
+sudo openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365
+sudo openssl rsa -in server.key -out server.key
+sudo openssl rsa -in client.key -out client.key
+
+# Update config file
+sudo nano /etc/mosquitto/conf.d/external.conf
+listener 8883 0.0.0.0
+cafile /etc/mosquitto/certs/ca.crt
+certfile /etc/mosquitto/certs/server.crt
+keyfile /etc/mosquitto/certs/server.key
+require_certificate true
+allow_anonymous false
+
+# Copy client certificates to root
+cp ca.crt ~
+cp client.crt ~
+cp client.key ~
+
+# Download client certificates
+scp -i "D:\~\ssh-key-2026-04-15.key" ubuntu@12.123.12.12:~/ca.crt "D:\~\"
+scp -i "D:\~\ssh-key-2026-04-15.key" ubuntu@12.123.12.12:~/client.crt "D:\~\"
+scp -i "D:\~\ssh-key-2026-04-15.key" ubuntu@12.123.12.12:~/client.key "D:\~\"
+
+# Change certificates ownership
+chown mosquitto: /etc/mosquitto/certs/*
+sudo chown -R mosquitto:mosquitto /etc/mosquitto/certs/
 
 -------------
 

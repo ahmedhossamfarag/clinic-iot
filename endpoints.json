@@ -32,6 +32,18 @@
         },
         {
             "path": "/settings",
+            "method": "GET",
+            "description": "Get the hospital settings.",
+            "response": {
+                "hospital_id": "VarChar(255)",
+                "name": "VarChar(255)",
+                "address": "VarChar(255)",
+                "admin_name": "VarChar(255)",
+                "admin_email": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/settings",
             "method": "PUT",
             "description": "Update the hospital settings.",
             "body": {

@@ -232,6 +232,33 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Settings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

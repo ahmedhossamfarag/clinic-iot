@@ -326,35 +326,81 @@ Test-NetConnection -ComputerName 89.168.76.70 -Port 8883
 Test-NetConnection -ComputerName 89.168.76.70 -Port 3000
 ```
 
+---
+
+# 26. Clone Frontend Project
+
+```bash
+cd /opt
 sudo git clone https://github.com/DottierDark/clinc-iot-frontend.git
+sudo chown -R ubuntu:ubuntu clinc-iot-frontend
+cd clinc-iot-frontend
+```
+
+---
+
+# 27. Setup Python Virtual Environment
+
+```bash
 sudo apt update
-sudo apt install python3-pip -y
-sudo apt install python3-venv -y
-sudo python3 -m venv venv
-sudo chown -R $USER:$USER /opt/clinic-iot-frontend/venv
-sudo iptables -I INPUT 1 -p tcp --dport 8050 -j ACCEPT
-sudo netfilter-persistent save
+sudo apt install -y python3-pip python3-venv
+
+# Create and configure venv
+python3 -m venv venv
+sudo chown -R $USER:$USER /opt/clinc-iot-frontend/venv
+
+# Install dependencies
 source venv/bin/activate
 pip install -r requirements.txt
-python app.py
+```
+
+---
+
+# 28. Open Frontend Port (Temporary)
+
+```bash
+sudo iptables -I INPUT 1 -p tcp --dport 8050 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+---
+
+# 29. Run Frontend with PM2
+
+```bash
+# Test manually first
 gunicorn app:server
-deactivate
-pm2 start "/opt/clinic-iot-frontend/venv/bin/gunicorn app:server" --name clinic-iot-frontend
+
+# Run as background service
+pm2 start "/opt/clinc-iot-frontend/venv/bin/gunicorn app:server" --name clinic-iot-frontend
 pm2 save
 pm2 startup
+```
 
+---
 
-sudo apt install nginx -y
+# 30. Install and Configure Nginx Reverse Proxy
+
+```bash
+sudo apt install -y nginx
+
+# Open HTTP port
 sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
 sudo netfilter-persistent save
-sudo nano /etc/nginx/sites-available/clinic-iot
 
+# Create site configuration
+sudo nano /etc/nginx/sites-available/clinic-iot
+```
+
+Paste the following:
+
+```nginx
 server {
     listen 80 default_server;
+    server_name central-link-iot.duckdns.org;
 
     location /api/ {
         proxy_pass http://127.0.0.1:3000/;
-        
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -362,136 +408,108 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8050/;
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 }
+```
 
+---
+
+# 31. Enable Nginx Configuration
+
+```bash
 sudo rm /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/clinic-iot /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
+```
 
-sudo nano /opt/clinin-iot-backend/.env
+---
+
+# 32. Update Environment Variables & Restart
+
+```bash
+# Backend
+sudo nano /opt/clinic-iot-backend/.env
 pm2 restart clinic-iot-backend
-sudo nano /opt/clinin-iot-frontend/.env
-pm2 restart clinic-iot-frontend
 
+# Frontend
+sudo nano /opt/clinc-iot-frontend/.env
+pm2 restart clinic-iot-frontend
+```
+
+---
+
+# 33. Cleanup Firewall Rules
+
+```bash
+# List rules with numbers
 sudo iptables -L INPUT --line-numbers -n
-# Delete rule 4 (Port 3000)
+
+# Delete specific ports (Reference numbers may vary)
 sudo iptables -D INPUT 4
-# Delete rule 2 (Port 8050)
 sudo iptables -D INPUT 2
 sudo netfilter-persistent save
+```
 
+---
+
+# 34. SSL Setup with Certbot (Let's Encrypt)
+
+```bash
 sudo apt update
-sudo apt install certbot python3-certbot-nginx -y
+sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d central-link-iot.duckdns.org
+
+# Open HTTPS port
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
+```
 
-# Allow the mosquitto group to access the directories
+---
+
+# 35. Secure Mosquitto with Let's Encrypt Certificates
+
+```bash
+# Fix permissions for Mosquitto access
 sudo chgrp -R mosquitto /etc/letsencrypt/live/
 sudo chgrp -R mosquitto /etc/letsencrypt/archive/
-# Ensure the directories are readable by the group
 sudo chmod -R 750 /etc/letsencrypt/live/
 sudo chmod -R 750 /etc/letsencrypt/archive/
+
+# Update Mosquitto Config
+sudo nano /etc/mosquitto/conf.d/external.conf
+```
+
+Replace TLS paths with:
+
+```conf
 cafile /etc/letsencrypt/live/central-link-iot.duckdns.org/chain.pem
 certfile /etc/letsencrypt/live/central-link-iot.duckdns.org/fullchain.pem
 keyfile /etc/letsencrypt/live/central-link-iot.duckdns.org/privkey.pem
+```
 
+---
+
+# 36. Setup Auto-Renewal Hook
+
+```bash
 sudo nano /etc/letsencrypt/renewal/central-link-iot.duckdns.org.conf
-renew_hook = systemctl restart mosquito
+```
 
-sudo nano /etc/letsencrypt/live/central-link-iot.duckdns.org/chain.pem
+Add under `[renewalparams]`:
+`renew_hook = systemctl restart mosquitto`
+
+---
+
+# 37. Final Restart and Verification
+
+```bash
 sudo systemctl restart mosquitto
-pm2 restart clinic-iot-backend
--------
-curl -I http://12.123.12.12
-curl -I http://central-link-iot.duckdns.org
-curl -k -I https://central-link-iot.duckdns.orgsudo git clone https://github.com/DottierDark/clinc-iot-frontend.git
-sudo apt update
-sudo apt install python3-pip -y
-sudo apt install python3-venv -y
-sudo python3 -m venv venv
-sudo chown -R $USER:$USER /opt/clinic-iot-frontend/venv
-sudo iptables -I INPUT 1 -p tcp --dport 8050 -j ACCEPT
-sudo netfilter-persistent save
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
-gunicorn app:server
-deactivate
-pm2 start "/opt/clinic-iot-frontend/venv/bin/gunicorn app:server" --name clinic-iot-frontend
-pm2 save
-pm2 startup
+pm2 restart all
 
-
-sudo apt install nginx -y
-sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
-sudo netfilter-persistent save
-sudo nano /etc/nginx/sites-available/clinic-iot
-
-server {
-    listen 80 default_server;
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:3000/;
-        
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:8050/;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-
-sudo rm /etc/nginx/sites-enabled/default
-sudo ln -s /etc/nginx/sites-available/clinic-iot /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-
-sudo nano /opt/clinin-iot-backend/.env
-pm2 restart clinic-iot-backend
-sudo nano /opt/clinin-iot-frontend/.env
-pm2 restart clinic-iot-frontend
-
-sudo iptables -L INPUT --line-numbers -n
-# Delete rule 4 (Port 3000)
-sudo iptables -D INPUT 4
-# Delete rule 2 (Port 8050)
-sudo iptables -D INPUT 2
-sudo netfilter-persistent save
-
-sudo apt update
-sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d central-link-iot.duckdns.org
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save
-
-# Allow the mosquitto group to access the directories
-sudo chgrp -R mosquitto /etc/letsencrypt/live/
-sudo chgrp -R mosquitto /etc/letsencrypt/archive/
-# Ensure the directories are readable by the group
-sudo chmod -R 750 /etc/letsencrypt/live/
-sudo chmod -R 750 /etc/letsencrypt/archive/
-cafile /etc/letsencrypt/live/central-link-iot.duckdns.org/chain.pem
-certfile /etc/letsencrypt/live/central-link-iot.duckdns.org/fullchain.pem
-keyfile /etc/letsencrypt/live/central-link-iot.duckdns.org/privkey.pem
-
-sudo nano /etc/letsencrypt/renewal/central-link-iot.duckdns.org.conf
-renew_hook = systemctl restart mosquito
-
-sudo nano /etc/letsencrypt/live/central-link-iot.duckdns.org/chain.pem
-sudo systemctl restart mosquitto
-pm2 restart clinic-iot-backend
--------
-curl -I http://12.123.12.12
+# Verify connection
 curl -I http://central-link-iot.duckdns.org
 curl -k -I https://central-link-iot.duckdns.org
+```

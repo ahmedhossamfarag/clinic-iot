@@ -48,31 +48,33 @@ CREATE TABLE records (
     CONSTRAINT fk_rec_patient FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
 );
 
+-- Create index
+CREATE INDEX routers_hid_idx ON routers (hospital_id);
+
+CREATE INDEX devices_hid_idx ON devices (hospital_id);
+
+CREATE INDEX patients_hid_idx ON patients (hospital_id);
+
+CREATE INDEX records_rid_idx ON records(router_id);
+
+CREATE INDEX records_pid_idx ON records(patient_id);
+
+CREATE INDEX devices_pid_idx ON devices(patient_id);
+
 -- Create latest_records that returns the latest record for each device
-CREATE
-OR REPLACE VIEW latest_records AS
+CREATE OR REPLACE VIEW latest_records AS
 SELECT
-    device_id,
-    router_id,
-    timestamp
-FROM
-    (
-        SELECT
-            devices.id AS device_id,
-            records.router_id,
-            records.timestamp,
-            ROW_NUMBER() OVER (
-                PARTITION BY
-                    devices.id
-                ORDER BY
-                    records.timestamp DESC
-            ) AS rn
-        FROM
-            records
-            JOIN devices ON records.patient_id = devices.patient_id
-    )
-WHERE
-    rn = 1;
+    d.id AS device_id,
+    r.router_id,
+    r.timestamp
+FROM devices d
+CROSS APPLY (
+    SELECT r.router_id, r.timestamp
+    FROM records r
+    WHERE r.patient_id = d.patient_id
+    ORDER BY r.timestamp DESC
+    FETCH FIRST 1 ROW ONLY
+) r;
 
 -- Create routers_map that returns a map of all routers with their locations and the count of connected devices
 CREATE

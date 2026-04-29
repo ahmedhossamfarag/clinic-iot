@@ -148,18 +148,27 @@ ORDER BY
 -- Create patients_routers_sessions that returns the total session duration for each patient
 CREATE
 OR REPLACE VIEW patients_routers_sessions AS
-SELECT
-    patient_id,
-    router_id,
-    MIN(timestamp) AS start_time,
-    (
-        CAST(MAX(timestamp) AS DATE) - CAST(MIN(timestamp) AS DATE)
-    ) * 86400 AS duration_seconds
-FROM
-    records
-GROUP BY
-    patient_id,
-    router_id;
+SELECT mr_patient_id AS patient_id,
+       mr_router_id  AS router_id,
+       start_time,
+       duration_seconds
+FROM records
+MATCH_RECOGNIZE (
+    PARTITION BY patient_id
+    ORDER BY timestamp
+    MEASURES
+        FIRST(patient_id) AS mr_patient_id,
+        FIRST(router_id)  AS mr_router_id,
+        FIRST(timestamp)  AS start_time,
+        (CAST(LAST(timestamp) AS DATE) - CAST(FIRST(timestamp) AS DATE)) * 86400
+            AS duration_seconds
+    ONE ROW PER MATCH
+    PATTERN (A{2,})
+    DEFINE
+        A AS router_id = FIRST(router_id)
+)
+ORDER BY patient_id, start_time;
+
 
 -- Create routers_hourly_sessions that returns the number of connected devices and the average session duration
 CREATE

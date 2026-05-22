@@ -19,7 +19,7 @@ CREATE TABLE patients (
 );
 
 CREATE TABLE routers (
-    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    id VARCHAR2(17) PRIMARY KEY,
     hospital_id RAW (16),
     name VARCHAR2 (255) NOT NULL,
     location_x NUMBER DEFAULT 0,
@@ -31,7 +31,7 @@ CREATE TABLE routers (
 ALTER TABLE routers ADD last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 
 CREATE TABLE devices (
-    id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
+    id VARCHAR2(17) PRIMARY KEY,
     hospital_id RAW (16),
     patient_id RAW (16),
     name VARCHAR2 (255) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE devices (
 
 CREATE TABLE records (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    router_id RAW (16),
+    router_id VARCHAR2(17),
     patient_id RAW (16),
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     rssi NUMBER NOT NULL,

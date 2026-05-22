@@ -85,7 +85,7 @@
             "method": "POST",
             "description": "Create a new router.",
             "body": {
-                "router_id": "UUID",
+                "router_id": "VarChar(17)",
                 "name": "VarChar(255)",
                 "location_x": "Float",
                 "location_y": "Float"
@@ -98,7 +98,7 @@
             "response": {
                 "routers": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "name": "VarChar(255)",
                         "location_x": "Float",
                         "location_y": "Float"
@@ -113,7 +113,7 @@
             "response": {
                 "routers_map": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "location_x": "Float",
                         "location_y": "Float",
                         "connected_devices_count": "Int"
@@ -128,7 +128,7 @@
             "response": {
                 "active_routers": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "name": "VarChar(255)",
                         "location_x": "Float",
                         "location_y": "Float",
@@ -143,7 +143,7 @@
             "description": "Get details of a specific router by its ID.",
             "response": {
                 "router": {
-                    "id": "UUID",
+                    "id": "VarChar(17)",
                     "name": "VarChar(255)",
                     "location_x": "Float",
                     "location_y": "Float"
@@ -157,11 +157,11 @@
             "response": {
                 "devices": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "name": "VarChar(255)",
                         "holder_name": "VarChar(255)",
                         "last_record_timestamp": "Timestamp",
-                        "router_id": "UUID",
+                        "router_id": "VarChar(17)",
                         "router_name": "VarChar(255)"
                     }
                 ]
@@ -174,7 +174,7 @@
             "response": {
                 "hourly_sessions": [
                     {
-                        "router_id": "UUID",
+                        "router_id": "VarChar(17)",
                         "hour": "Timestamp",
                         "sessions_count": "Int",
                         "average_session_duration": "Int"
@@ -187,7 +187,7 @@
             "method": "POST",
             "description": "Create a new device.",
             "body": {
-                "device_id": "UUID",
+                "device_id": "VarChar(17)",
                 "name": "VarChar(255)"
             }
         },
@@ -198,7 +198,7 @@
             "response": {
                 "devices": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "name": "VarChar(255)",
                         "patient_id": "UUID|Null"
                     }
@@ -212,11 +212,11 @@
             "response": {
                 "devices": [
                     {
-                        "id": "UUID",
+                        "id": "VarChar(17)",
                         "name": "VarChar(255)",
                         "holder_name": "VarChar(255)",
                         "last_record_timestamp": "Timestamp",
-                        "router_id": "UUID",
+                        "router_id": "VarChar(17)",
                         "router_name": "VarChar(255)"
                     }
                 ]
@@ -245,7 +245,7 @@
             "method": "POST",
             "description": "Create a new patient.",
             "body": {
-                "device_id": "UUID",
+                "device_id": "VarChar(17)",
                 "name": "VarChar(255)"
             }
         },
@@ -270,7 +270,7 @@
                 "patient_sessions": [
                     {
                         "patient_id": "UUID",
-                        "router_id": "UUID",
+                        "router_id": "VarChar(17)",
                         "router_name": "VarChar(255)",
                         "start_time": "Timestamp",
                         "duration": "Int"

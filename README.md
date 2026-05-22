@@ -298,10 +298,10 @@ The analytics engine computes the following metrics from the records table, expo
 
 | Repository | Description | Link |
 |---|---|---|
-| **Frontend** | Python Dash / Flask dashboard application with real-time floor plan, analytics, and patient tracking | *(placeholder)* |
-| **Routers** | Python firmware for ESP32 gateways — BLE scanning, RSSI capture, and MQTTS publishing | *(placeholder)* |
-| **Devices** | Arduino/C++ firmware for ESP32-based BLE wearable tag — advertising UUID broadcast | *(placeholder)* |
-| **Backend** | Node.js REST API server — MQTT subscriber, Oracle DB integration, session engine, and analytics queries | *(placeholder)* |
+| **Frontend** | Python Dash / Flask dashboard application with real-time floor plan, analytics, and patient tracking | [show](https://github.com/DottierDark/clinc-iot-frontend) |
+| **Routers** | Python firmware for ESP32 gateways — BLE scanning, RSSI capture, and MQTTS publishing | [show](https://github.com/ahmedhossamfarag/clinic-iot-routers) |
+| **Devices** | Arduino/C++ firmware for ESP32-based BLE wearable tag — advertising UUID broadcast | [show](https://github.com/ahmedhossamfarag/clinic-iot-devices) |
+| **Backend** | Node.js REST API server — MQTT subscriber, Oracle DB integration, session engine, and analytics queries | [show](https://github.com/ahmedhossamfarag/clinic-iot-backend) |
 
 ---
 
